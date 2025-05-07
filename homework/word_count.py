@@ -4,112 +4,88 @@
 
 import fileinput
 import glob
-import os.path
+import os
+import string
 from itertools import groupby
 
 
-#
-# Escriba la función load_input que recive como parámetro un folder y retorna
-# una lista de tuplas donde el primer elemento de cada tupla es el nombre del
-# archivo y el segundo es una línea del archivo. La función convierte a tuplas
-# todas las lineas de cada uno de los archivos. La función es genérica y debe
-# leer todos los archivos de folder entregado como parámetro.
-#
-# Por ejemplo:
-#   [
-#     ('text0'.txt', 'Analytics is the discovery, inter ...'),
-#     ('text0'.txt', 'in data. Especially valuable in ar...').
-#     ...
-#     ('text2.txt'. 'hypotheses.')
-#   ]
-#
 def load_input(input_directory):
     """Funcion load_input"""
+    contenido = []
+    archivos = glob.glob(f"{input_directory}/*")
+    with fileinput.input(files=archivos) as lineas:
+        for linea in lineas:
+            contenido.append((fileinput.filename(), linea))
+    return contenido
 
 
-#
-# Escriba la función line_preprocessing que recibe una lista de tuplas de la
-# función anterior y retorna una lista de tuplas (clave, valor). Esta función
-# realiza el preprocesamiento de las líneas de texto,
-#
 def line_preprocessing(sequence):
     """Line Preprocessing"""
+    procesadas = []
+    for archivo, linea in sequence:
+        limpio = linea.translate(str.maketrans("", "", string.punctuation)).lower()
+        procesadas.append((archivo, limpio))
+    return procesadas
 
 
-#
-# Escriba una función llamada maper que recibe una lista de tuplas de la
-# función anterior y retorna una lista de tuplas (clave, valor). En este caso,
-# la clave es cada palabra y el valor es 1, puesto que se está realizando un
-# conteo.
-#
-#   [
-#     ('Analytics', 1),
-#     ('is', 1),
-#     ...
-#   ]
-#
 def mapper(sequence):
     """Mapper"""
+    mapeadas = []
+    for _, texto in sequence:
+        for palabra in texto.split():
+            mapeadas.append((palabra, 1))
+    return mapeadas
 
 
-#
-# Escriba la función shuffle_and_sort que recibe la lista de tuplas entregada
-# por el mapper, y retorna una lista con el mismo contenido ordenado por la
-# clave.
-#
-#   [
-#     ('Analytics', 1),
-#     ('Analytics', 1),
-#     ...
-#   ]
-#
 def shuffle_and_sort(sequence):
     """Shuffle and Sort"""
+    return sorted(sequence, key=lambda tupla: tupla[0])
 
 
-#
-# Escriba la función reducer, la cual recibe el resultado de shuffle_and_sort y
-# reduce los valores asociados a cada clave sumandolos. Como resultado, por
-# ejemplo, la reducción indica cuantas veces aparece la palabra analytics en el
-# texto.
-#
 def reducer(sequence):
     """Reducer"""
+    resultado = []
+    for palabra, grupo in groupby(sequence, lambda par: par[0]):
+        total = sum(valor for _, valor in grupo)
+        resultado.append((palabra, total))
+    return resultado
 
 
-#
-# Escriba la función create_ouptput_directory que recibe un nombre de
-# directorio y lo crea. Si el directorio existe, lo borra
-#
 def create_ouptput_directory(output_directory):
     """Create Output Directory"""
+    if os.path.exists(output_directory):
+        archivos = glob.glob(f"{output_directory}/*")
+        for archivo in archivos:
+            os.remove(archivo)
+        os.rmdir(output_directory)
+    os.makedirs(output_directory)
 
 
-#
-# Escriba la función save_output, la cual almacena en un archivo de texto
-# llamado part-00000 el resultado del reducer. El archivo debe ser guardado en
-# el directorio entregado como parámetro, y que se creo en el paso anterior.
-# Adicionalmente, el archivo debe contener una tupla por línea, donde el primer
-# elemento es la clave y el segundo el valor. Los elementos de la tupla están
-# separados por un tabulador.
-#
 def save_output(output_directory, sequence):
     """Save Output"""
+    ruta_salida = os.path.join(output_directory, "part-00000")
+    with open(ruta_salida, "w", encoding="utf-8") as salida:
+        for clave, valor in sequence:
+            salida.write(f"{clave}\t{valor}\n")
 
 
-#
-# La siguiente función crea un archivo llamado _SUCCESS en el directorio
-# entregado como parámetro.
-#
 def create_marker(output_directory):
     """Create Marker"""
+    marcador = os.path.join(output_directory, "_SUCCESS")
+    with open(marcador, "w", encoding="utf-8") as f:
+        f.write("")
 
 
-#
-# Escriba la función job, la cual orquesta las funciones anteriores.
-#
 def run_job(input_directory, output_directory):
     """Job"""
+    datos = load_input(input_directory)
+    datos = line_preprocessing(datos)
+    datos = mapper(datos)
+    datos = shuffle_and_sort(datos)
+    datos = reducer(datos)
+    create_ouptput_directory(output_directory)
+    save_output(output_directory, datos)
+    create_marker(output_directory)
 
 
 if __name__ == "__main__":
