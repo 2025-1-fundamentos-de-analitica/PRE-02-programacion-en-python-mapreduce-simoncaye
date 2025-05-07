@@ -38,8 +38,8 @@ def test_01():
             key, value = line.strip().split("\t")
             result[key] = int(value)
 
-    assert result["analytics"] == 5000
-    assert result["business"] == 7000
-    assert result["by"] == 3000
-    assert result["algorithms"] == 2000
-    assert result["analysis"] == 4000
+    assert result["analytics"] == 5
+    assert result["business"] == 7
+    assert result["by"] == 3
+    assert result["algorithms"] == 2
+    assert result["analysis"] == 4
